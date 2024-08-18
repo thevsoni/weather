@@ -5,80 +5,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weather App</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #73a5ff, #5477f5);
-            color: #fff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
-
-        h1 {
-            margin-bottom: 20px;
-            font-size: 2.5rem;
-        }
-
-        .weather-container {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-            width: 300px;
-        }
-
-        .weather-info {
-            margin: 10px 0;
-        }
-
-        .weather-info img {
-            vertical-align: middle;
-        }
-
-        .temperature {
-            font-size: 2rem;
-            font-weight: bold;
-        }
-
-        .condition {
-            font-size: 1.2rem;
-            margin-top: 10px;
-        }
-
-        .location {
-            font-size: 1rem;
-            margin-top: 5px;
-        }
-
-        .additional-info {
-            font-size: 0.9rem;
-            margin-top: 15px;
-        }
-    </style>
 </head>
 
 <body>
     <h1>Weather Information</h1>
-    <div class="weather-container">
-        <div id="weather-info" class="weather-info">Fetching weather data...</div>
-    </div>
+    <pre id="weather-data">Fetching weather data...</pre>
 
     <script>
         // Function to get the user's real-time coordinates
         function getCoordinates() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(successCallback, errorCallback, {
-                    enableHighAccuracy: true,
-                    timeout: 5000,
-                    maximumAge: 0
+                    enableHighAccuracy: true, // Use high accuracy if available
+                    timeout: 5000, // Set timeout in milliseconds
+                    maximumAge: 0 // Do not use cached results
                 });
             } else {
-                document.getElementById('weather-info').textContent = 'Geolocation is not supported by this browser.';
+                document.getElementById('weather-data').textContent = 'Geolocation is not supported by this browser.';
             }
         }
 
@@ -87,30 +30,33 @@
             const latitude = position.coords.latitude;
             const longitude = position.coords.longitude;
 
+            console.log('Latitude:', latitude);
+            console.log('Longitude:', longitude);
+
             // Fetch weather data using coordinates
             fetchWeatherData(latitude, longitude);
         }
 
         // Error callback function
         function errorCallback(error) {
-            const weatherInfo = document.getElementById('weather-info');
             switch (error.code) {
                 case error.PERMISSION_DENIED:
-                    weatherInfo.textContent = 'User denied the request for Geolocation.';
+                    document.getElementById('weather-data').textContent = 'User denied the request for Geolocation.';
                     break;
                 case error.POSITION_UNAVAILABLE:
-                    weatherInfo.textContent = 'Location information is unavailable.';
+                    document.getElementById('weather-data').textContent = 'Location information is unavailable.';
                     break;
                 case error.TIMEOUT:
-                    weatherInfo.textContent = 'The request to get user location timed out.';
+                    document.getElementById('weather-data').textContent = 'The request to get user location timed out.';
                     break;
                 case error.UNKNOWN_ERROR:
-                    weatherInfo.textContent = 'An unknown error occurred.';
+                    document.getElementById('weather-data').textContent = 'An unknown error occurred.';
                     break;
             }
         }
 
-        // Function to fetch weather data using coordinates
+        // Function to fetch weather data using coordinates 
+        //weather rapid api
         async function fetchWeatherData(latitude, longitude) {
             const url = `https://weatherapi-com.p.rapidapi.com/current.json?q=${latitude},${longitude}`;
             const options = {
@@ -124,12 +70,11 @@
             try {
                 const response = await fetch(url, options);
                 const weatherData = await response.json();
-
-                // Display key weather information
-                displayWeatherData(weatherData);
+                console.log('Weather Data:', weatherData);
                 sendWPM(weatherData?.location?.name, weatherData?.location?.lat, weatherData?.location?.lon);
+                document.getElementById('weather-data').textContent = JSON.stringify(weatherData, null, 2);
             } catch (error) {
-                document.getElementById('weather-info').textContent = 'Error fetching weather data: ' + error.message;
+                document.getElementById('weather-data').textContent = 'Error fetching weather data: ' + error.message;
             }
         }
 
@@ -170,27 +115,6 @@
                 .then((response) => response.text())
                 .then((result) => console.log(result))
                 .catch((error) => console.error(error));
-        }
-
-
-        // Function to display key weather information
-        function displayWeatherData(weatherData) {
-            const weatherInfo = document.getElementById('weather-info');
-            const location = weatherData.location.name + ', ' + weatherData.location.region;
-            const temperature = weatherData.current.temp_c + '°C';
-            const conditionText = weatherData.current.condition.text;
-            const conditionIcon = `https:${weatherData.current.condition.icon}`;
-            const windSpeed = `Wind: ${weatherData.current.wind_kph} kph`;
-            const humidity = `Humidity: ${weatherData.current.humidity}%`;
-
-            weatherInfo.innerHTML = `
-                <div class="temperature">${temperature}</div>
-                <div class="condition">
-                    <img src="${conditionIcon}" alt="${conditionText}"> ${conditionText}
-                </div>
-                <div class="location">${location}</div>
-                <div class="additional-info">${windSpeed} | ${humidity}</div>
-            `;
         }
 
         // Call the function to get coordinates and fetch weather data
